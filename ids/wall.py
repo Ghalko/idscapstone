@@ -4,7 +4,7 @@ from ggplot import *
 
 def dataplot(df, lab, xl=None, yl=None, title=None):
     """Plot the label given of the dataframe"""
-    plot = ggplot(mdata, aes('DATETIME', lab)) +\
+    plot = ggplot(df, aes('DATETIME', lab)) +\
         geom_line(color='red') +\
         ggtitle(title) +\
         xlab(xl) +\
@@ -73,7 +73,7 @@ def cycle_file(filename=None, label=None, **kwargs):
     return mdata
     
 if __name__=="__main__":
-    filename = "/export/data/bgorges/udacityIDS/data/wall.csv"
+    filename = "/export/data/bgorges/udacityIDS/idscapstone/data/wall.csv"
     mdata = cycle_file(filename, ["ENTRIES", "EXITS"])
-    mdata.to_csv("/export/data/bgorges/udacityIDS/data/cleanWall.csv")
+    mdata.to_csv("/export/data/bgorges/udacityIDS/idscapstone/data/cleanWall.csv")
 

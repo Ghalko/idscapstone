@@ -14,34 +14,36 @@ def sql_query(data=None, query=None, cols=None, index=None):
     ndata = ndata.set_index(index)
     return ndata
 
-def shift_by_one(data=None, col=None, new=None, shift=1):
+def sub_data(data=None, col=None, new=None, shift=1):
     if data is None or col is None:
         print "missing data or column"
         return            
     if new is None:
         new = col + "_shifted"
-    data[new] = data[col] - data.shift(1)[col]
+    data[new] = data[col] - data.shift(shift)[col]
+    data = data.fillna(1)
+    return data
 
-master = "/export/data/bgorges/udacityIDS/data/cleanWall.csv"
+def extract_hour(data=None):
+    data['HOUR'] = data.DATETIME.map(lambda x: int(x[11])*10 + int(x[12]))
+    return data
 
-mta_data = pandas.read_csv(master)
-#mta_data['DATETIME'] = pandas.to_datetime(mta_data['DATETIME'])
-mta_data['HOUR'] = mta_data.DATETIME.map(lambda x: int(x[11])*10 + int(x[12]))
-#print mta_data.describe()
-
-mta_data['ENTRIES_hourly'] = mta_data['ENTRIES'] - mta_data.shift(1)['ENTRIES']
-mta_data['EXITS_hourly'] = mta_data['EXITS'] - mta_data.shift(1)['EXITS']
-mta_data = mta_data.fillna(1)
-print mta_data.describe()
-
-#--- Group by time over all the data ------------------------
-q = '''SELECT hour,avg(cast(entries_hourly as integer)),
+if __name__=="__main__":
+    master = "/export/data/bgorges/udacityIDS/data/cleanWall.csv"
+    #Read csv file
+    mta_data = pandas.read_csv(master)
+    mta_data = extract_hour(mta_data)
+    #shifts by one and subtracts.
+    mta_data = sub_data(mta_data, 'ENTRIES', 'ENTRIES_hourly')
+    mta_data = sub_data(mta_data, 'EXITS', 'EXITS_hourly')
+    print mta_data.describe() #just to see what's coming.
+    
+    #--- Group by time over all the data ------------------------
+    q = '''SELECT hour,avg(cast(entries_hourly as integer)),
 avg(cast(exits_hourly as integer)) FROM mta_data
 GROUP BY hour'''
-
-group1 = pandasql.sqldf(q.lower(), locals())
-group1.columns = ['HOUR', 'AVG_ENTRIES', 'AVG_EXITS']
-group1 = group1.set_index('HOUR')
+    group1 = sql_query(mta_data, q, ['HOUR', 'AVG_ENTRIES', 'AVG_EXITS'],
+                       'HOUR')
 
 filename = "/export/data/bgorges/udacityIDS/data/avg_per_hour_all.csv"
 group1.to_csv(filename)
